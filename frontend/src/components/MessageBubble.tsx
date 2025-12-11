@@ -362,7 +362,6 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
             className="max-w-[90vw] max-h-[90vh] object-contain"
             onClick={(e) => e.stopPropagation()}
           />
-          <p className="absolute bottom-8 text-white text-sm">请右键图片选择"复制图片"</p>
           <button
             onClick={() => setFrameModalUrl(null)}
             className="absolute top-4 right-4 text-white hover:text-gray-300 text-2xl"
