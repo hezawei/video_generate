@@ -168,15 +168,14 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
                   style={{ maxHeight: '400px', objectFit: 'contain' }}
                   onClick={() => setShowImageModal(true)}
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-1">
                   <a
                     href={message.video_url}
                     download
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white 
-                               border border-border rounded-lg hover:bg-gray-50 transition-colors"
+                    title="下载图片"
+                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    <Download size={12} />
-                    下载图片
+                    <Download size={16} />
                   </a>
                   <button
                     onClick={async () => {
@@ -190,11 +189,10 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
                         console.error('复制图片失败:', e)
                       }
                     }}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white 
-                               border border-border rounded-lg hover:bg-gray-50 transition-colors"
+                    title="复制图片"
+                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    <Copy size={12} />
-                    复制图片
+                    <Copy size={16} />
                   </button>
                 </div>
               </div>
@@ -235,14 +233,13 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
                 </div>
 
                 {/* 操作按钮 */}
-                <div className="flex gap-2">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={handleDownload}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white 
-                               border border-border rounded-lg hover:bg-gray-50 transition-colors"
+                    title="下载视频"
+                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    <Download size={12} />
-                    下载视频
+                    <Download size={16} />
                   </button>
                   <button
                     onClick={async () => {
@@ -256,27 +253,26 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
                         console.error('复制视频失败:', e)
                       }
                     }}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white 
-                               border border-border rounded-lg hover:bg-gray-50 transition-colors"
+                    title="复制视频"
+                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    <Copy size={12} />
-                    复制视频
+                    <Copy size={16} />
                   </button>
                   <button
                     onClick={handleCopyLastFrame}
                     disabled={extracting || copySuccess}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg transition-all
+                    className={`flex items-center gap-1 px-2 py-1 text-xs rounded-lg transition-all
                                ${copySuccess 
-                                 ? 'bg-green-50 border border-green-300 text-green-600' 
-                                 : 'bg-white border border-border hover:bg-gray-50'}
+                                 ? 'bg-green-50 text-green-600' 
+                                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}
                                disabled:cursor-wait`}
                   >
                     {copySuccess ? (
                       <><Check size={12} /> 已复制</>
                     ) : extracting ? (
-                      <><Loader2 size={12} className="animate-spin" /> 提取中...</>
+                      <><Loader2 size={12} className="animate-spin" /> 提取中</>
                     ) : (
-                      <><Copy size={12} /> 复制尾帧</>
+                      '复制尾帧'
                     )}
                   </button>
                 </div>

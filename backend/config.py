@@ -12,7 +12,7 @@ WUYIN_CONFIG = {
     "api_key": "Kp2Awh23NjJeIrLTkZANHhFDWw",
     "submit_url": "https://api.wuyinkeji.com/api/sora2/submit",
     "detail_url": "https://api.wuyinkeji.com/api/sora2/detail",
-    "default_aspect_ratio": "9:16",
+    "default_aspect_ratio": "1:1",
     "default_duration": "10",
     "default_size": "small",
 }
