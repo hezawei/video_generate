@@ -241,20 +241,45 @@ def get_task_status(message_id: int, db: DBSession = Depends(get_db)):
 
 @router.post("/upload-image")
 async def upload_image(file: UploadFile = File(...)):
-    """上传图片（用于图生视频）"""
+    """上传图片（用于图生视频）- 同时上传到图床获取公网URL"""
+    import uuid
+    
     uploads_dir = SERVER_CONFIG["uploads_dir"]
     os.makedirs(uploads_dir, exist_ok=True)
     
     # 生成唯一文件名
-    import uuid
     ext = os.path.splitext(file.filename)[1] or ".jpg"
     filename = f"{uuid.uuid4()}{ext}"
     filepath = os.path.join(uploads_dir, filename)
     
-    # 保存文件
+    # 读取文件内容
     content = await file.read()
+    
+    # 保存到本地（用于预览）
     with open(filepath, "wb") as f:
         f.write(content)
     
-    # 返回可访问的URL
-    return {"filename": filename, "url": f"/uploads/{filename}"}
+    # 上传到SM.MS图床获取公网URL
+    public_url = None
+    try:
+        smms_response = requests.post(
+            "https://sm.ms/api/v2/upload",
+            headers={"Authorization": ""},  # SM.MS匿名上传
+            files={"smfile": (filename, content)},
+            timeout=30
+        )
+        smms_result = smms_response.json()
+        if smms_result.get("success"):
+            public_url = smms_result["data"]["url"]
+        elif smms_result.get("code") == "image_repeated":
+            # 图片已存在，使用已有URL
+            public_url = smms_result.get("images")
+    except Exception as e:
+        print(f"上传图床失败: {e}")
+    
+    # 返回本地预览URL和公网URL
+    return {
+        "filename": filename, 
+        "url": f"/uploads/{filename}",  # 本地预览用
+        "public_url": public_url  # 传给API用
+    }

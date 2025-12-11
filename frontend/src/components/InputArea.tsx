@@ -34,7 +34,12 @@ export function InputArea({ mode, onModeChange, onGenerate, loading, disabled }:
     setUploading(true)
     try {
       const result = await api.uploadImage(file)
-      setImageUrl(result.url)
+      // 优先使用public_url（图床URL），用于传给视频生成API
+      // result.url是本地预览用的
+      setImageUrl(result.public_url || result.url)
+      if (!result.public_url) {
+        console.warn('图床上传失败，使用本地URL（可能导致API调用失败）')
+      }
     } catch (e) {
       console.error('上传失败:', e)
       setImagePreview(null)

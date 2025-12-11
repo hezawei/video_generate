@@ -77,7 +77,7 @@ export async function getTaskStatus(messageId: number): Promise<TaskStatus> {
   return data
 }
 
-export async function uploadImage(file: File): Promise<{ filename: string; url: string }> {
+export async function uploadImage(file: File): Promise<{ filename: string; url: string; public_url: string | null }> {
   const formData = new FormData()
   formData.append('file', file)
   const { data } = await api.post('/generate/upload-image', formData, {

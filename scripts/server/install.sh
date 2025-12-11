@@ -33,10 +33,13 @@ fi
 source venv/bin/activate
 
 echo -e "${YELLOW}[3/5] 安装后端依赖...${NC}"
-pip install -r backend/requirements.txt
+# 使用清华镜像加速
+pip install -r backend/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 echo -e "${YELLOW}[4/5] 安装前端依赖...${NC}"
 cd frontend
+# 使用淘宝镜像加速
+npm config set registry https://registry.npmmirror.com
 npm install
 
 echo -e "${YELLOW}[5/5] 构建前端...${NC}"
