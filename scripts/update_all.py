@@ -24,7 +24,7 @@ msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 run(f'git commit -m "{msg}" || echo "无新变更"')
 
 print("\n[2/4] 推送到 GitHub...")
-run("git push")
+run("git push origin master")
 
 # 2. 服务器更新
 print("\n[3/4] 服务器拉取代码...")
