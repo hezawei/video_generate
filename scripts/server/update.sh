@@ -38,7 +38,7 @@ fi
 
 echo -e "${YELLOW}[3/4] 更新后端依赖...${NC}"
 source venv/bin/activate
-pip install -r backend/requirements.txt --quiet
+pip install -r backend/requirements.txt --quiet -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 echo -e "${YELLOW}[4/4] 重启服务...${NC}"
 ./scripts/server/restart.sh
