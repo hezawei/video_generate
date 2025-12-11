@@ -1,6 +1,6 @@
 #!/bin/bash
 # 服务器端：自动更新脚本
-# 用法: ./scripts/server/update.sh
+# 用法: bash scripts/server/update.sh [OLD_HEAD]
 
 set -e
 
@@ -12,15 +12,11 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${YELLOW}[1/4] 拉取最新代码...${NC}"
-# 记录当前commit
-OLD_HEAD=$(git rev-parse HEAD 2>/dev/null || echo "none")
-# 丢弃本地修改，强制拉取
-git fetch origin
-git reset --hard origin/master
+# 从参数获取旧HEAD（由update_all.py传入）
+OLD_HEAD="${1:-none}"
 NEW_HEAD=$(git rev-parse HEAD)
 
-echo -e "${YELLOW}[2/4] 检查前端变更...${NC}"
+echo -e "${YELLOW}[1/3] 检查前端变更...${NC}"
 # 比较前后commit，检查是否有frontend变更
 if [ "$OLD_HEAD" = "none" ] || [ "$OLD_HEAD" != "$NEW_HEAD" ]; then
     if git diff --name-only "$OLD_HEAD" "$NEW_HEAD" 2>/dev/null | grep -q "^frontend/"; then
@@ -36,11 +32,11 @@ else
     echo "代码无变更。"
 fi
 
-echo -e "${YELLOW}[3/4] 更新后端依赖...${NC}"
+echo -e "${YELLOW}[2/3] 更新后端依赖...${NC}"
 source venv/bin/activate
 pip install -r backend/requirements.txt --quiet -i https://pypi.tuna.tsinghua.edu.cn/simple
 
-echo -e "${YELLOW}[4/4] 重启服务...${NC}"
+echo -e "${YELLOW}[3/3] 重启服务...${NC}"
 bash scripts/server/restart.sh
 
 echo -e "${GREEN}更新完成！${NC}"
