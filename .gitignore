@@ -1,0 +1,2 @@
+# 敏感信息（包含 GitHub Token）
+backend/credentials.py

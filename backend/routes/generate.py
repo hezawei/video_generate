@@ -265,9 +265,12 @@ async def upload_image(file: UploadFile = File(...)):
     public_url = None
     import base64
     
-    # GitHub 图床配置（从环境变量或配置读取）
-    GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
-    GITHUB_REPO = os.environ.get("GITHUB_REPO", "hezawei/image-bed")
+    # GitHub 图床配置（从 credentials.py 读取）
+    try:
+        from credentials import GITHUB_TOKEN, GITHUB_REPO
+    except ImportError:
+        GITHUB_TOKEN = ""
+        GITHUB_REPO = "hezawei/image-bed"
     
     if GITHUB_TOKEN:
         try:
