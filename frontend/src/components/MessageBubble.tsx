@@ -31,6 +31,7 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
   const [copySuccess, setCopySuccess] = useState(false)
   const [copyImageSuccess, setCopyImageSuccess] = useState<boolean | null>(null)  // null=默认, true=成功, false=失败
   const [copyLinkSuccess, setCopyLinkSuccess] = useState<boolean | null>(null)
+  const [frameModalUrl, setFrameModalUrl] = useState<string | null>(null)  // 尾帧弹窗
   
   const handleCopyLastFrame = async () => {
     if (!message.video_url || extracting) return
@@ -67,9 +68,9 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
         setCopySuccess(true)
         setTimeout(() => setCopySuccess(false), 2000)
       } catch (e) {
-        // 降级：打开新窗口
+        // 降级：显示弹窗
         const url = URL.createObjectURL(blob)
-        window.open(url, '_blank')
+        setFrameModalUrl(url)
       }
     } catch (e) {
       console.error('提取尾帧失败:', e)
@@ -342,6 +343,28 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
           />
           <button
             onClick={() => setShowImageModal(false)}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 text-2xl"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* 尾帧弹窗（复制失败时显示） */}
+      {frameModalUrl && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center cursor-pointer"
+          onClick={() => setFrameModalUrl(null)}
+        >
+          <img
+            src={frameModalUrl}
+            alt="视频尾帧"
+            className="max-w-[90vw] max-h-[90vh] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <p className="absolute bottom-8 text-white text-sm">请右键图片选择"复制图片"</p>
+          <button
+            onClick={() => setFrameModalUrl(null)}
             className="absolute top-4 right-4 text-white hover:text-gray-300 text-2xl"
           >
             ✕
