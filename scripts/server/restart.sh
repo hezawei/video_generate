@@ -6,6 +6,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 cd "$PROJECT_DIR"
 
-"$SCRIPT_DIR/stop.sh"
+bash "$SCRIPT_DIR/stop.sh"
 sleep 1
-"$SCRIPT_DIR/start.sh"
+bash "$SCRIPT_DIR/start.sh"

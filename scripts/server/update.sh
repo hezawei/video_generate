@@ -41,6 +41,6 @@ source venv/bin/activate
 pip install -r backend/requirements.txt --quiet -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 echo -e "${YELLOW}[4/4] 重启服务...${NC}"
-./scripts/server/restart.sh
+bash scripts/server/restart.sh
 
 echo -e "${GREEN}更新完成！${NC}"
