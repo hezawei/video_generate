@@ -15,6 +15,7 @@ NC='\033[0m'
 echo -e "${YELLOW}[1/3] 构建前端...${NC}"
 cd frontend
 npm install --silent
+chmod +x node_modules/.bin/*
 npm run build
 cd ..
 
