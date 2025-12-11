@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { User, Bot, Loader2, AlertCircle, Download, Play, Pencil } from 'lucide-react'
+import { User, Bot, Loader2, AlertCircle, Download, Play, Pencil, Copy, Check } from 'lucide-react'
 import type { Message } from '../types'
 
 interface MessageBubbleProps {
@@ -23,6 +23,56 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
     setIsPlaying(true)
     const video = document.getElementById(`video-${message.id}`) as HTMLVideoElement
     video?.play()
+  }
+
+  // 复制尾帧到剪贴板（通过后端提取）
+  const [extracting, setExtracting] = useState(false)
+  const [copySuccess, setCopySuccess] = useState(false)
+  
+  const handleCopyLastFrame = async () => {
+    if (!message.video_url || extracting) return
+    
+    setExtracting(true)
+    setCopySuccess(false)
+    try {
+      // 调用后端 API 提取尾帧
+      const response = await fetch(`/api/generate/extract-frame?video_url=${encodeURIComponent(message.video_url)}`)
+      
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.detail || '提取失败')
+      }
+      
+      const data = await response.json()
+      
+      // 将 base64 转换为 blob
+      const base64Data = data.image.split(',')[1]
+      const byteCharacters = atob(base64Data)
+      const byteNumbers = new Array(byteCharacters.length)
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      const byteArray = new Uint8Array(byteNumbers)
+      const blob = new Blob([byteArray], { type: 'image/png' })
+      
+      // 复制到剪贴板
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ])
+        // 显示成功状态
+        setCopySuccess(true)
+        setTimeout(() => setCopySuccess(false), 2000)
+      } catch (e) {
+        // 降级：打开新窗口
+        const url = URL.createObjectURL(blob)
+        window.open(url, '_blank')
+      }
+    } catch (e) {
+      console.error('提取尾帧失败:', e)
+    } finally {
+      setExtracting(false)
+    }
   }
 
   // 下载视频
@@ -58,21 +108,20 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
         {/* 用户消息 - 双击可编辑 */}
         {isUser && (
           <div 
-            className="space-y-2 group cursor-pointer" 
+            className="group cursor-pointer" 
             onDoubleClick={handleDoubleClick}
             title="双击编辑"
           >
-            {message.reference_image && (
-              <div className="inline-block">
+            <div className="inline-flex items-center gap-2">
+              {/* 参考图片（小图） */}
+              {message.reference_image && (
                 <img
                   src={message.reference_image}
                   alt="参考图片"
-                  className="max-w-xs rounded-lg border border-border"
+                  className="w-10 h-10 rounded-lg object-cover border border-border"
                 />
-              </div>
-            )}
-            <div className="inline-flex items-center gap-2">
-              <div className="bg-primary text-white px-4 py-2 rounded-2xl rounded-tr-sm text-sm">
+              )}
+              <div className="bg-primary text-white px-4 py-2 rounded-2xl rounded-tr-sm text-sm max-w-md">
                 {message.content}
               </div>
               <Pencil 
@@ -83,7 +132,7 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
           </div>
         )}
 
-        {/* AI消息（视频） */}
+        {/* AI消息（视频或图片） */}
         {!isUser && (
           <div className="bg-gray-50 rounded-2xl rounded-tl-sm p-4 inline-block max-w-md">
             {/* 状态显示 */}
@@ -108,7 +157,31 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
               </div>
             )}
 
-            {message.status === 'success' && message.video_url && (
+            {/* 生成的图片 */}
+            {message.status === 'success' && message.content_type === 'image' && message.video_url && (
+              <div className="space-y-3">
+                <img
+                  src={message.video_url}
+                  alt="生成的图片"
+                  className="w-full rounded-lg"
+                  style={{ maxHeight: '400px', objectFit: 'contain' }}
+                />
+                <div className="flex gap-2">
+                  <a
+                    href={message.video_url}
+                    download
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white 
+                               border border-border rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Download size={12} />
+                    下载图片
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* 生成的视频 */}
+            {message.status === 'success' && message.content_type === 'video' && message.video_url && (
               <div className="space-y-3">
                 {/* 视频播放器 - 带大播放按钮 */}
                 <div className="relative group">
@@ -150,6 +223,23 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
                   >
                     <Download size={12} />
                     下载视频
+                  </button>
+                  <button
+                    onClick={handleCopyLastFrame}
+                    disabled={extracting || copySuccess}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg transition-all
+                               ${copySuccess 
+                                 ? 'bg-green-50 border border-green-300 text-green-600' 
+                                 : 'bg-white border border-border hover:bg-gray-50'}
+                               disabled:cursor-wait`}
+                  >
+                    {copySuccess ? (
+                      <><Check size={12} /> 已复制</>
+                    ) : extracting ? (
+                      <><Loader2 size={12} className="animate-spin" /> 提取中...</>
+                    ) : (
+                      <><Copy size={12} /> 复制尾帧</>
+                    )}
                   </button>
                 </div>
               </div>

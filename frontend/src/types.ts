@@ -26,4 +26,7 @@ export interface Message {
 }
 
 // 生成模式
-export type GenerateMode = 'text' | 'image'
+export type GenerateMode = 'text' | 'image'  // 文生视频 | 图生视频
+
+// 功能类型
+export type FeatureType = 'video' | 'image'  // 视频生成 | 图片生成

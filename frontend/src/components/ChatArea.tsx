@@ -10,11 +10,15 @@ interface ChatAreaProps {
 
 export function ChatArea({ messages, onEditMessage }: ChatAreaProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
+  const prevLengthRef = useRef(0)
 
-  // 滚动到底部
+  // 只有新消息时才滚动到底部（状态更新不滚动）
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    if (messages.length > prevLengthRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+    prevLengthRef.current = messages.length
+  }, [messages.length])
 
   if (messages.length === 0) {
     return (

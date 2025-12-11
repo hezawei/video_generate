@@ -308,3 +308,56 @@ async def upload_image(file: UploadFile = File(...)):
         "url": f"/uploads/{filename}",  # 本地预览用
         "public_url": public_url  # 传给API用
     }
+
+
+@router.get("/extract-frame")
+async def extract_last_frame(video_url: str):
+    """提取视频最后一帧，返回 base64 图片"""
+    import cv2
+    import numpy as np
+    import base64
+    import tempfile
+    
+    print(f"[提取尾帧] URL: {video_url}")
+    
+    try:
+        # 下载视频到临时文件
+        response = requests.get(video_url, timeout=30)
+        response.raise_for_status()
+        
+        with tempfile.NamedTemporaryFile(suffix='.mp4', delete=False) as tmp:
+            tmp.write(response.content)
+            tmp_path = tmp.name
+        
+        # 用 OpenCV 读取视频
+        cap = cv2.VideoCapture(tmp_path)
+        if not cap.isOpened():
+            raise HTTPException(status_code=500, detail="无法打开视频")
+        
+        # 跳转到最后一帧
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, total_frames - 1))
+        
+        ret, frame = cap.read()
+        cap.release()
+        
+        # 删除临时文件
+        os.unlink(tmp_path)
+        
+        if not ret:
+            raise HTTPException(status_code=500, detail="无法读取帧")
+        
+        # 转换为 PNG 并编码为 base64
+        _, buffer = cv2.imencode('.png', frame)
+        img_base64 = base64.b64encode(buffer).decode('utf-8')
+        
+        print(f"[提取尾帧] 成功，图片大小: {len(img_base64)} 字符")
+        
+        return {"image": f"data:image/png;base64,{img_base64}"}
+        
+    except requests.RequestException as e:
+        print(f"[提取尾帧] 下载失败: {e}")
+        raise HTTPException(status_code=500, detail=f"下载视频失败: {e}")
+    except Exception as e:
+        print(f"[提取尾帧] 处理失败: {e}")
+        raise HTTPException(status_code=500, detail=f"处理失败: {e}")

@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, Image, Type, X, Upload, Loader2 } from 'lucide-react'
-import type { GenerateMode } from '../types'
+import { Send, Type, X, Upload, Loader2, Video, ImageIcon } from 'lucide-react'
+import type { GenerateMode, FeatureType } from '../types'
 import * as api from '../api'
 
 interface InputAreaProps {
+  featureType: FeatureType
+  onFeatureTypeChange: (type: FeatureType) => void
   mode: GenerateMode
   onModeChange: (mode: GenerateMode) => void
   onGenerate: (prompt: string, imageUrl?: string) => void
@@ -13,7 +15,7 @@ interface InputAreaProps {
   onCancelEdit?: () => void
 }
 
-export function InputArea({ mode, onModeChange, onGenerate, loading, disabled, editingMessage, onCancelEdit }: InputAreaProps) {
+export function InputArea({ featureType, onFeatureTypeChange, mode, onModeChange, onGenerate, loading, disabled, editingMessage, onCancelEdit }: InputAreaProps) {
   const [prompt, setPrompt] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -125,31 +127,69 @@ export function InputArea({ mode, onModeChange, onGenerate, loading, disabled, e
   return (
     <div className="border-t border-border bg-surface p-8 pb-4">
       <div className="max-w-5xl mx-auto">
-        {/* 模式切换 */}
+        {/* 功能类型切换（图片/视频） */}
         <div className="flex gap-3 mb-4">
-          <button
-            onClick={() => onModeChange('text')}
-            className={`flex items-center gap-2 px-4 py-2 text-base rounded-lg transition-colors
-                       ${mode === 'text' 
-                         ? 'bg-primary text-white' 
-                         : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}
-          >
-            <Type size={18} />
-            文生视频
-          </button>
-          <button
-            onClick={() => onModeChange('image')}
-            className={`flex items-center gap-2 px-4 py-2 text-base rounded-lg transition-colors
-                       ${mode === 'image' 
-                         ? 'bg-primary text-white' 
-                         : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}
-          >
-            <Image size={18} />
-            图生视频
-          </button>
+          {/* 图片生成 */}
+          <div className={`flex rounded-lg overflow-hidden border ${featureType === 'image' ? 'border-primary' : 'border-transparent'}`}>
+            <button
+              onClick={() => { onFeatureTypeChange('image'); onModeChange('text') }}
+              className={`flex items-center gap-2 px-3 py-2 text-sm transition-colors
+                         ${featureType === 'image' && mode === 'text'
+                           ? 'bg-primary text-white' 
+                           : featureType === 'image'
+                           ? 'bg-gray-100 text-secondary hover:bg-gray-200'
+                           : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+            >
+              <Type size={16} />
+              文生图片
+            </button>
+            <button
+              onClick={() => { onFeatureTypeChange('image'); onModeChange('image') }}
+              className={`flex items-center gap-2 px-3 py-2 text-sm transition-colors
+                         ${featureType === 'image' && mode === 'image'
+                           ? 'bg-primary text-white' 
+                           : featureType === 'image'
+                           ? 'bg-gray-100 text-secondary hover:bg-gray-200'
+                           : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+            >
+              <ImageIcon size={16} />
+              图生图片
+            </button>
+          </div>
+          
+          {/* 分隔 */}
+          <div className="w-px bg-gray-200" />
+          
+          {/* 视频生成 */}
+          <div className={`flex rounded-lg overflow-hidden border ${featureType === 'video' ? 'border-primary' : 'border-transparent'}`}>
+            <button
+              onClick={() => { onFeatureTypeChange('video'); onModeChange('text') }}
+              className={`flex items-center gap-2 px-3 py-2 text-sm transition-colors
+                         ${featureType === 'video' && mode === 'text'
+                           ? 'bg-primary text-white' 
+                           : featureType === 'video'
+                           ? 'bg-gray-100 text-secondary hover:bg-gray-200'
+                           : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+            >
+              <Type size={16} />
+              文生视频
+            </button>
+            <button
+              onClick={() => { onFeatureTypeChange('video'); onModeChange('image') }}
+              className={`flex items-center gap-2 px-3 py-2 text-sm transition-colors
+                         ${featureType === 'video' && mode === 'image'
+                           ? 'bg-primary text-white' 
+                           : featureType === 'video'
+                           ? 'bg-gray-100 text-secondary hover:bg-gray-200'
+                           : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+            >
+              <Video size={16} />
+              图生视频
+            </button>
+          </div>
         </div>
 
-        {/* 图生视频模式：图片上传区 */}
+        {/* 图生模式：图片上传区（图生视频或图生图片） */}
         {mode === 'image' && (
           <div className="mb-3">
             {imagePreview ? (
@@ -219,7 +259,11 @@ export function InputArea({ mode, onModeChange, onGenerate, loading, disabled, e
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
-              placeholder={mode === 'text' ? '描述你想生成的视频内容...' : '描述视频动作和效果... (可粘贴图片)'}
+              placeholder={
+                featureType === 'video'
+                  ? (mode === 'text' ? '描述你想生成的视频内容...' : '描述视频动作和效果... (可粘贴图片)')
+                  : (mode === 'text' ? '描述你想生成的图片内容...' : '描述如何修改这张图片... (可粘贴图片)')
+              }
               disabled={disabled}
               className="w-full px-6 py-5 pr-16 border border-border rounded-2xl resize-none
                         focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary

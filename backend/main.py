@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from database import init_db
-from routes import sessions, generate
+from routes import sessions, generate, image
 from config import SERVER_CONFIG
 from tasks.task_recovery import start_recovery_daemon
 
@@ -30,6 +30,7 @@ app.add_middleware(
 # 注册路由
 app.include_router(sessions.router)
 app.include_router(generate.router)
+app.include_router(image.router)
 
 # 静态文件服务（上传的图片和下载的视频）
 uploads_dir = SERVER_CONFIG["uploads_dir"]

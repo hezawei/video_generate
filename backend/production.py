@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from database import init_db
-from routes import sessions, generate
+from routes import sessions, generate, image
 from config import SERVER_CONFIG
 from tasks.task_recovery import start_recovery_daemon, stop_recovery_daemon
 
@@ -22,6 +22,7 @@ app.add_middleware(
 
 app.include_router(sessions.router)
 app.include_router(generate.router)
+app.include_router(image.router)
 
 uploads_dir = SERVER_CONFIG["uploads_dir"]
 downloads_dir = SERVER_CONFIG["downloads_dir"]

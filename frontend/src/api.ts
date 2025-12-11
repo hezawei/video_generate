@@ -26,6 +26,11 @@ export async function getSessionMessages(sessionId: number): Promise<Message[]> 
   return data
 }
 
+export async function deleteMessageAndAfter(sessionId: number, messageId: number): Promise<{ deleted_count: number }> {
+  const { data } = await api.delete(`/sessions/${sessionId}/messages/${messageId}/and-after`)
+  return data
+}
+
 // 生成相关
 export interface GenerateResponse {
   message_id: number
@@ -83,5 +88,35 @@ export async function uploadImage(file: File): Promise<{ filename: string; url: 
   const { data } = await api.post('/generate/upload-image', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
+  return data
+}
+
+// 图片生成相关
+export interface ImageGenerateResponse {
+  message_id: number
+  image_url: string
+}
+
+export async function textToImage(
+  sessionId: number,
+  prompt: string
+): Promise<ImageGenerateResponse> {
+  const { data } = await api.post('/image/text-to-image', {
+    session_id: sessionId,
+    prompt,
+  }, { timeout: 180000 })  // 图片生成可能需要更长时间
+  return data
+}
+
+export async function imageToImage(
+  sessionId: number,
+  prompt: string,
+  referenceImage: string  // base64 或 URL
+): Promise<ImageGenerateResponse> {
+  const { data } = await api.post('/image/image-to-image', {
+    session_id: sessionId,
+    prompt,
+    reference_image: referenceImage,
+  }, { timeout: 180000 })
   return data
 }

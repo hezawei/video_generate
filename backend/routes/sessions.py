@@ -69,3 +69,29 @@ def get_session_messages(session_id: int, db: DBSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="会话不存在")
     messages = db.query(Message).filter(Message.session_id == session_id).order_by(Message.created_at).all()
     return messages
+
+
+@router.delete("/{session_id}/messages/{message_id}/and-after")
+def delete_message_and_after(session_id: int, message_id: int, db: DBSession = Depends(get_db)):
+    """删除指定消息及之后的所有消息（用于编辑重发）"""
+    session = db.query(Session).filter(Session.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    
+    # 找到目标消息
+    target_message = db.query(Message).filter(
+        Message.id == message_id,
+        Message.session_id == session_id
+    ).first()
+    if not target_message:
+        raise HTTPException(status_code=404, detail="消息不存在")
+    
+    # 删除该消息及之后的所有消息
+    deleted_count = db.query(Message).filter(
+        Message.session_id == session_id,
+        Message.created_at >= target_message.created_at
+    ).delete()
+    
+    db.commit()
+    print(f"[回滚] 删除了 {deleted_count} 条消息")
+    return {"deleted_count": deleted_count}

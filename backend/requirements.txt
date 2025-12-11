@@ -4,3 +4,6 @@ sqlalchemy
 pydantic
 requests
 python-multipart
+opencv-python-headless
+openai
+httpx
