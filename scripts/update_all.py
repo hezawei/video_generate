@@ -28,8 +28,8 @@ run("git push origin master")
 
 # 2. 服务器更新
 print("\n[3/4] 服务器拉取代码...")
-print("[4/4] 重启服务...")
-run(f'ssh {SERVER} "cd {REMOTE_DIR} && ./scripts/server/update.sh"')
+# 先强制重置，再运行update.sh
+run(f'ssh {SERVER} "cd {REMOTE_DIR} && git fetch origin && git reset --hard origin/master && ./scripts/server/update.sh"')
 
 print("\n" + "=" * 50)
 print("更新完成！")
