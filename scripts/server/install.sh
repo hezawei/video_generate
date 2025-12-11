@@ -1,22 +1,35 @@
 #!/bin/bash
-# 服务器端安装脚本
+# 服务器端：首次安装/重装脚本
+# 用法: ./scripts/server/install.sh
 
 set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+cd "$PROJECT_DIR"
+echo "工作目录: $PROJECT_DIR"
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-cd "$PROJECT_DIR"
-
 echo -e "${YELLOW}[1/5] 更新系统并安装依赖...${NC}"
+export DEBIAN_FRONTEND=noninteractive
 apt update
-apt install -y python3 python3-pip python3-venv nodejs npm
+apt install -y python3 python3-pip python3-venv git curl
+
+# 安装Node.js 18.x (Ubuntu apt的版本太旧)
+if ! command -v node &> /dev/null || [ "$(node -v | cut -d'.' -f1 | tr -d 'v')" -lt 16 ]; then
+    echo "安装 Node.js 18.x..."
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+    apt install -y nodejs
+fi
+echo "Node.js 版本: $(node -v)"
 
 echo -e "${YELLOW}[2/5] 创建Python虚拟环境...${NC}"
-python3 -m venv venv
+if [ ! -d "venv" ]; then
+    python3 -m venv venv
+fi
 source venv/bin/activate
 
 echo -e "${YELLOW}[3/5] 安装后端依赖...${NC}"
@@ -86,4 +99,5 @@ if __name__ == "__main__":
     uvicorn.run("production:app", host="0.0.0.0", port=SERVER_CONFIG["port"], workers=2)
 PYEOF
 
+chmod +x scripts/server/*.sh
 echo -e "${GREEN}安装完成！${NC}"
