@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { User, Bot, Loader2, AlertCircle, Download, Play, Pencil, Copy, Check } from 'lucide-react'
+import { User, Bot, Loader2, AlertCircle, Download, Play, Pencil, Copy, Check, X } from 'lucide-react'
 import type { Message } from '../types'
 
 interface MessageBubbleProps {
@@ -29,8 +29,8 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
   // 复制尾帧到剪贴板（通过后端提取）
   const [extracting, setExtracting] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
-  const [copyImageSuccess, setCopyImageSuccess] = useState(false)
-  const [copyLinkSuccess, setCopyLinkSuccess] = useState(false)
+  const [copyImageSuccess, setCopyImageSuccess] = useState<boolean | null>(null)  // null=默认, true=成功, false=失败
+  const [copyLinkSuccess, setCopyLinkSuccess] = useState<boolean | null>(null)
   
   const handleCopyLastFrame = async () => {
     if (!message.video_url || extracting) return
@@ -202,21 +202,23 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
                                 new ClipboardItem({ 'image/png': blob })
                               ])
                               setCopyImageSuccess(true)
-                              setTimeout(() => setCopyImageSuccess(false), 2000)
+                              setTimeout(() => setCopyImageSuccess(null), 2000)
                             } catch {
-                              window.open(message.video_url!, '_blank')
+                              setCopyImageSuccess(false)
+                              setTimeout(() => setCopyImageSuccess(null), 2000)
                             }
                           }
                         }, 'image/png')
                       } catch (e) {
                         console.error('复制图片失败:', e)
-                        window.open(message.video_url!, '_blank')
+                        setCopyImageSuccess(false)
+                        setTimeout(() => setCopyImageSuccess(null), 2000)
                       }
                     }}
                     title="复制图片"
-                    className={`p-2 rounded-lg transition-all ${copyImageSuccess ? 'text-green-600 bg-green-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+                    className={`p-2 rounded-lg transition-all ${copyImageSuccess === true ? 'text-green-600 bg-green-50' : copyImageSuccess === false ? 'text-red-500 bg-red-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
                   >
-                    {copyImageSuccess ? <Check size={16} /> : <Copy size={16} />}
+                    {copyImageSuccess === true ? <Check size={16} /> : copyImageSuccess === false ? <X size={16} /> : <Copy size={16} />}
                   </button>
                 </div>
               </div>
@@ -270,17 +272,30 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
                       try {
                         // 复制视频链接
                         const url = new URL(message.video_url!, window.location.origin).href
-                        await navigator.clipboard.writeText(url)
+                        // 尝试使用 Clipboard API
+                        if (navigator.clipboard && window.isSecureContext) {
+                          await navigator.clipboard.writeText(url)
+                        } else {
+                          // HTTP 环境降级：使用传统方法
+                          const textarea = document.createElement('textarea')
+                          textarea.value = url
+                          document.body.appendChild(textarea)
+                          textarea.select()
+                          document.execCommand('copy')
+                          document.body.removeChild(textarea)
+                        }
                         setCopyLinkSuccess(true)
-                        setTimeout(() => setCopyLinkSuccess(false), 2000)
+                        setTimeout(() => setCopyLinkSuccess(null), 2000)
                       } catch (e) {
                         console.error('复制链接失败:', e)
+                        setCopyLinkSuccess(false)
+                        setTimeout(() => setCopyLinkSuccess(null), 2000)
                       }
                     }}
                     title="复制链接"
-                    className={`p-2 rounded-lg transition-all ${copyLinkSuccess ? 'text-green-600 bg-green-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+                    className={`p-2 rounded-lg transition-all ${copyLinkSuccess === true ? 'text-green-600 bg-green-50' : copyLinkSuccess === false ? 'text-red-500 bg-red-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
                   >
-                    {copyLinkSuccess ? <Check size={16} /> : <Copy size={16} />}
+                    {copyLinkSuccess === true ? <Check size={16} /> : copyLinkSuccess === false ? <X size={16} /> : <Copy size={16} />}
                   </button>
                   <button
                     onClick={handleCopyLastFrame}
