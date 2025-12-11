@@ -15,7 +15,9 @@ NC='\033[0m'
 echo -e "${YELLOW}[1/4] 拉取最新代码...${NC}"
 # 记录当前commit
 OLD_HEAD=$(git rev-parse HEAD 2>/dev/null || echo "none")
-git pull
+# 丢弃本地修改，强制拉取
+git fetch origin
+git reset --hard origin/master
 NEW_HEAD=$(git rev-parse HEAD)
 
 echo -e "${YELLOW}[2/4] 检查前端变更...${NC}"
