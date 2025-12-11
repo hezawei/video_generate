@@ -27,9 +27,8 @@ print("\n[2/4] 推送到 GitHub...")
 run("git push origin master")
 
 # 2. 服务器更新
-print("\n[3/4] 服务器拉取代码...")
-# 记录旧HEAD，强制重置，然后传递旧HEAD给update.sh来检测变更
-run(f'ssh {SERVER} "cd {REMOTE_DIR} && OLD_HEAD=$(git rev-parse HEAD) && git fetch origin && git reset --hard origin/master && bash scripts/server/update.sh $OLD_HEAD"')
+print("\n[3/4] 服务器拉取并更新...")
+run(f'ssh {SERVER} "cd {REMOTE_DIR} && git fetch origin && git reset --hard origin/master && bash scripts/server/update.sh"')
 
 print("\n" + "=" * 50)
 print("更新完成！")
