@@ -29,6 +29,8 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
   // 复制尾帧到剪贴板（通过后端提取）
   const [extracting, setExtracting] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [copyImageSuccess, setCopyImageSuccess] = useState(false)
+  const [copyLinkSuccess, setCopyLinkSuccess] = useState(false)
   
   const handleCopyLastFrame = async () => {
     if (!message.video_url || extracting) return
@@ -180,19 +182,41 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
                   <button
                     onClick={async () => {
                       try {
-                        const response = await fetch(message.video_url!)
-                        const blob = await response.blob()
-                        await navigator.clipboard.write([
-                          new ClipboardItem({ [blob.type]: blob })
-                        ])
+                        // 使用 img 元素 + canvas 来复制图片（避免跨域问题）
+                        const img = new Image()
+                        img.crossOrigin = 'anonymous'
+                        img.src = message.video_url!
+                        await new Promise((resolve, reject) => {
+                          img.onload = resolve
+                          img.onerror = reject
+                        })
+                        const canvas = document.createElement('canvas')
+                        canvas.width = img.width
+                        canvas.height = img.height
+                        const ctx = canvas.getContext('2d')
+                        ctx?.drawImage(img, 0, 0)
+                        canvas.toBlob(async (blob) => {
+                          if (blob) {
+                            try {
+                              await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                              ])
+                              setCopyImageSuccess(true)
+                              setTimeout(() => setCopyImageSuccess(false), 2000)
+                            } catch {
+                              window.open(message.video_url!, '_blank')
+                            }
+                          }
+                        }, 'image/png')
                       } catch (e) {
                         console.error('复制图片失败:', e)
+                        window.open(message.video_url!, '_blank')
                       }
                     }}
                     title="复制图片"
-                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    className={`p-2 rounded-lg transition-all ${copyImageSuccess ? 'text-green-600 bg-green-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
                   >
-                    <Copy size={16} />
+                    {copyImageSuccess ? <Check size={16} /> : <Copy size={16} />}
                   </button>
                 </div>
               </div>
@@ -244,19 +268,19 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
                   <button
                     onClick={async () => {
                       try {
-                        const response = await fetch(message.video_url!)
-                        const blob = await response.blob()
-                        await navigator.clipboard.write([
-                          new ClipboardItem({ [blob.type]: blob })
-                        ])
+                        // 复制视频链接
+                        const url = new URL(message.video_url!, window.location.origin).href
+                        await navigator.clipboard.writeText(url)
+                        setCopyLinkSuccess(true)
+                        setTimeout(() => setCopyLinkSuccess(false), 2000)
                       } catch (e) {
-                        console.error('复制视频失败:', e)
+                        console.error('复制链接失败:', e)
                       }
                     }}
-                    title="复制视频"
-                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="复制链接"
+                    className={`p-2 rounded-lg transition-all ${copyLinkSuccess ? 'text-green-600 bg-green-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
                   >
-                    <Copy size={16} />
+                    {copyLinkSuccess ? <Check size={16} /> : <Copy size={16} />}
                   </button>
                   <button
                     onClick={handleCopyLastFrame}
