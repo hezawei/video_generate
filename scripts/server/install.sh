@@ -41,6 +41,8 @@ cd frontend
 # 使用淘宝镜像加速
 npm config set registry https://registry.npmmirror.com
 npm install
+# 修复node_modules权限问题
+chmod -R +x node_modules/.bin/
 
 echo -e "${YELLOW}[5/5] 构建前端...${NC}"
 npm run build
