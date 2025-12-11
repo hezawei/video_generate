@@ -10,6 +10,7 @@ interface MessageBubbleProps {
 export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
   const isUser = message.role === 'user'
   const [isPlaying, setIsPlaying] = useState(false)
+  const [showImageModal, setShowImageModal] = useState(false)
 
   // 双击编辑
   const handleDoubleClick = () => {
@@ -163,8 +164,9 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
                 <img
                   src={message.video_url}
                   alt="生成的图片"
-                  className="w-full rounded-lg"
+                  className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                   style={{ maxHeight: '400px', objectFit: 'contain' }}
+                  onClick={() => setShowImageModal(true)}
                 />
                 <div className="flex gap-2">
                   <a
@@ -176,6 +178,24 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
                     <Download size={12} />
                     下载图片
                   </a>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(message.video_url!)
+                        const blob = await response.blob()
+                        await navigator.clipboard.write([
+                          new ClipboardItem({ [blob.type]: blob })
+                        ])
+                      } catch (e) {
+                        console.error('复制图片失败:', e)
+                      }
+                    }}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white 
+                               border border-border rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Copy size={12} />
+                    复制图片
+                  </button>
                 </div>
               </div>
             )}
@@ -225,6 +245,24 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
                     下载视频
                   </button>
                   <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(message.video_url!)
+                        const blob = await response.blob()
+                        await navigator.clipboard.write([
+                          new ClipboardItem({ [blob.type]: blob })
+                        ])
+                      } catch (e) {
+                        console.error('复制视频失败:', e)
+                      }
+                    }}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white 
+                               border border-border rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Copy size={12} />
+                    复制视频
+                  </button>
+                  <button
                     onClick={handleCopyLastFrame}
                     disabled={extracting || copySuccess}
                     className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg transition-all
@@ -254,6 +292,27 @@ export function MessageBubble({ message, onEdit }: MessageBubbleProps) {
           </div>
         )}
       </div>
+
+      {/* 图片放大弹窗 */}
+      {showImageModal && message.video_url && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center cursor-pointer"
+          onClick={() => setShowImageModal(false)}
+        >
+          <img
+            src={message.video_url}
+            alt="放大图片"
+            className="max-w-[90vw] max-h-[90vh] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setShowImageModal(false)}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 text-2xl"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   )
 }
