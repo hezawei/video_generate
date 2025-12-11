@@ -5,9 +5,10 @@ import type { Message } from '../types'
 
 interface ChatAreaProps {
   messages: Message[]
+  onEditMessage?: (message: Message) => void
 }
 
-export function ChatArea({ messages }: ChatAreaProps) {
+export function ChatArea({ messages, onEditMessage }: ChatAreaProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // 滚动到底部
@@ -29,7 +30,7 @@ export function ChatArea({ messages }: ChatAreaProps) {
     <div className="flex-1 overflow-y-auto p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         {messages.map(message => (
-          <MessageBubble key={message.id} message={message} />
+          <MessageBubble key={message.id} message={message} onEdit={onEditMessage} />
         ))}
         <div ref={bottomRef} />
       </div>

@@ -243,6 +243,7 @@ def get_task_status(message_id: int, db: DBSession = Depends(get_db)):
 async def upload_image(file: UploadFile = File(...)):
     """上传图片（用于图生视频）- 同时上传到图床获取公网URL"""
     import uuid
+    print(f"[上传图片] 收到文件: {file.filename}")
     
     uploads_dir = SERVER_CONFIG["uploads_dir"]
     os.makedirs(uploads_dir, exist_ok=True)
@@ -258,24 +259,45 @@ async def upload_image(file: UploadFile = File(...)):
     # 保存到本地（用于预览）
     with open(filepath, "wb") as f:
         f.write(content)
+    print(f"[上传图片] 已保存到本地: {filepath}")
     
-    # 上传到SM.MS图床获取公网URL
+    # 上传到GitHub图床获取公网URL
     public_url = None
-    try:
-        smms_response = requests.post(
-            "https://sm.ms/api/v2/upload",
-            headers={"Authorization": ""},  # SM.MS匿名上传
-            files={"smfile": (filename, content)},
-            timeout=30
-        )
-        smms_result = smms_response.json()
-        if smms_result.get("success"):
-            public_url = smms_result["data"]["url"]
-        elif smms_result.get("code") == "image_repeated":
-            # 图片已存在，使用已有URL
-            public_url = smms_result.get("images")
-    except Exception as e:
-        print(f"上传图床失败: {e}")
+    import base64
+    
+    # GitHub 图床配置（从环境变量或配置读取）
+    GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+    GITHUB_REPO = os.environ.get("GITHUB_REPO", "hezawei/image-bed")
+    
+    if GITHUB_TOKEN:
+        try:
+            img_base64 = base64.b64encode(content).decode('utf-8')
+            github_api = f"https://api.github.com/repos/{GITHUB_REPO}/contents/images/{filename}"
+            
+            response = requests.put(
+                github_api,
+                headers={
+                    "Authorization": f"token {GITHUB_TOKEN}",
+                    "Accept": "application/vnd.github.v3+json"
+                },
+                json={
+                    "message": f"Upload {filename}",
+                    "content": img_base64
+                },
+                timeout=15
+            )
+            
+            if response.status_code in [200, 201]:
+                # 构造 raw 链接
+                public_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/images/{filename}"
+                print(f"GitHub上传成功: {public_url}")
+            else:
+                print(f"GitHub上传失败: {response.status_code} - {response.text[:200]}")
+        except Exception as e:
+            print(f"GitHub上传失败: {e}")
+    else:
+        print("[警告] 未配置 GITHUB_TOKEN，图生视频功能不可用")
+        print("请创建 GitHub Token: https://github.com/settings/tokens")
     
     # 返回本地预览URL和公网URL
     return {

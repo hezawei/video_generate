@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from database import init_db
 from routes import sessions, generate
 from config import SERVER_CONFIG
-from tasks.task_recovery import start_recovery_daemon
+from tasks.task_recovery import start_recovery_daemon, stop_recovery_daemon
 
 app = FastAPI(title="AI视频生成")
 
@@ -38,6 +38,10 @@ app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")
 def startup():
     init_db()
     start_recovery_daemon()
+
+@app.on_event("shutdown")
+def shutdown():
+    stop_recovery_daemon()
 
 @app.get("/api/health")
 def health_check():

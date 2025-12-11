@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Send, Image, Type, X, Upload, Loader2 } from 'lucide-react'
 import type { GenerateMode } from '../types'
 import * as api from '../api'
@@ -9,20 +9,59 @@ interface InputAreaProps {
   onGenerate: (prompt: string, imageUrl?: string) => void
   loading: boolean
   disabled: boolean
+  editingMessage?: { content: string; imageUrl?: string } | null
+  onCancelEdit?: () => void
 }
 
-export function InputArea({ mode, onModeChange, onGenerate, loading, disabled }: InputAreaProps) {
+export function InputArea({ mode, onModeChange, onGenerate, loading, disabled, editingMessage, onCancelEdit }: InputAreaProps) {
   const [prompt, setPrompt] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // 处理图片上传
-  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // 编辑模式：填充内容
+  useEffect(() => {
+    if (editingMessage) {
+      setPrompt(editingMessage.content)
+      if (editingMessage.imageUrl) {
+        setImagePreview(editingMessage.imageUrl)
+        setImageUrl(editingMessage.imageUrl)
+        onModeChange('image')
+      }
+      textareaRef.current?.focus()
+    }
+  }, [editingMessage])
 
+  // 处理粘贴图片 (Ctrl+V)
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault()
+        
+        // 已有图片时提示
+        if (imagePreview) {
+          alert('最多只能上传一张图片，请先移除现有图片')
+          return
+        }
+        
+        const file = item.getAsFile()
+        if (file) {
+          // 自动切换到图生视频模式
+          onModeChange('image')
+          await uploadFile(file)
+        }
+        break
+      }
+    }
+  }
+
+  // 上传文件（复用逻辑）
+  const uploadFile = async (file: File) => {
     // 本地预览
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -34,8 +73,6 @@ export function InputArea({ mode, onModeChange, onGenerate, loading, disabled }:
     setUploading(true)
     try {
       const result = await api.uploadImage(file)
-      // 优先使用public_url（图床URL），用于传给视频生成API
-      // result.url是本地预览用的
       setImageUrl(result.public_url || result.url)
       if (!result.public_url) {
         console.warn('图床上传失败，使用本地URL（可能导致API调用失败）')
@@ -46,6 +83,12 @@ export function InputArea({ mode, onModeChange, onGenerate, loading, disabled }:
     } finally {
       setUploading(false)
     }
+  }
+
+  // 处理图片上传（复用 uploadFile）
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) await uploadFile(file)
   }
 
   // 移除图片
@@ -150,14 +193,33 @@ export function InputArea({ mode, onModeChange, onGenerate, loading, disabled }:
           </div>
         )}
 
+        {/* 编辑模式提示 */}
+        {editingMessage && (
+          <div className="flex items-center justify-between mb-2 px-2 py-1 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <span className="text-sm text-yellow-700">编辑消息</span>
+            <button
+              onClick={() => {
+                setPrompt('')
+                handleRemoveImage()
+                onCancelEdit?.()
+              }}
+              className="text-sm text-yellow-700 hover:text-yellow-900"
+            >
+              取消
+            </button>
+          </div>
+        )}
+
         {/* 输入框 */}
         <div className="flex gap-2">
           <div className="flex-1 relative">
             <textarea
+              ref={textareaRef}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={mode === 'text' ? '描述你想生成的视频内容...' : '描述视频动作和效果...'}
+              onPaste={handlePaste}
+              placeholder={mode === 'text' ? '描述你想生成的视频内容...' : '描述视频动作和效果... (可粘贴图片)'}
               disabled={disabled}
               className="w-full px-6 py-5 pr-16 border border-border rounded-2xl resize-none
                         focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary

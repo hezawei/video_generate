@@ -49,17 +49,20 @@ def startup():
     start_recovery_daemon()
 
 
+@app.on_event("shutdown")
+def shutdown():
+    """应用关闭时清理资源"""
+    print("[关闭] 正在停止后台任务...")
+    from tasks.task_recovery import stop_recovery_daemon
+    stop_recovery_daemon()
+    print("[关闭] 清理完成")
+
+
 @app.get("/api/health")
 def health_check():
     """健康检查"""
     return {"status": "ok"}
 
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "main:app",
-        host=SERVER_CONFIG["host"],
-        port=SERVER_CONFIG["port"],
-        reload=True
-    )
+# 本地开发请使用: python dev.py
+# 生产环境使用: python production.py

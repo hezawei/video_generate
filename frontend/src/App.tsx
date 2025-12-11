@@ -12,6 +12,7 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [mode, setMode] = useState<GenerateMode>('text')
   const [pollingIds, setPollingIds] = useState<Set<number>>(new Set())
+  const [editingMessage, setEditingMessage] = useState<{ content: string; imageUrl?: string } | null>(null)
 
   // 加载会话列表
   const loadSessions = useCallback(async () => {
@@ -173,7 +174,13 @@ function App() {
       {/* 主内容区 */}
       <div className="flex-1 flex flex-col">
         {/* 聊天区域 */}
-        <ChatArea messages={messages} />
+        <ChatArea 
+          messages={messages} 
+          onEditMessage={(msg) => setEditingMessage({ 
+            content: msg.content || '', 
+            imageUrl: msg.reference_image || undefined
+          })}
+        />
 
         {/* 输入区域 */}
         <InputArea
@@ -182,6 +189,8 @@ function App() {
           onGenerate={handleGenerate}
           loading={loading}
           disabled={loading}
+          editingMessage={editingMessage}
+          onCancelEdit={() => setEditingMessage(null)}
         />
       </div>
     </div>

@@ -12,6 +12,9 @@ from config import POLL_CONFIG, SERVER_CONFIG
 import requests
 import os
 
+# 全局停止标志
+_stop_flag = threading.Event()
+
 
 def poll_single_task(message_id: int, task_id: str):
     """轮询单个任务"""
@@ -82,18 +85,29 @@ def poll_single_task(message_id: int, task_id: str):
 
 def start_recovery_daemon():
     """启动任务恢复守护线程"""
+    _stop_flag.clear()
+    
     def daemon_loop():
-        while True:
+        while not _stop_flag.is_set():
             try:
                 recover_pending_tasks()
             except Exception as e:
                 print(f"[Daemon] 守护线程出错: {e}")
-            # 每60秒检查一次
-            time.sleep(60)
+            # 每60秒检查一次，但每秒检查停止标志
+            for _ in range(60):
+                if _stop_flag.is_set():
+                    break
+                time.sleep(1)
 
     thread = threading.Thread(target=daemon_loop, daemon=True)
     thread.start()
     print("[Daemon] 任务恢复守护线程已启动")
+
+
+def stop_recovery_daemon():
+    """停止任务恢复守护线程"""
+    _stop_flag.set()
+    print("[Daemon] 任务恢复守护线程已停止")
 
 
 def recover_pending_tasks():
